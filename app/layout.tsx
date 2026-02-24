@@ -6,9 +6,6 @@ import { Toaster } from '@/components/ui/toaster'
 import SessionProviderWrapper from '@/components/session-provider-wrapper'
 import { CartProvider } from '@/lib/cart-context'
 
-const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
-const oswald = Oswald({ subsets: ['latin'], variable: '--font-oswald' })
-
 export const dynamic = 'force-dynamic'
 
 const metadataBase = process.env.NEXTAUTH_URL
@@ -66,7 +63,9 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
-        <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;700&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&display=swap" rel="stylesheet" />
         <style dangerouslySetInnerHTML={{
           __html: `
             :root {
@@ -98,7 +97,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className={`${inter.variable} ${oswald.variable} font-display bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 antialiased selection:bg-primary selection:text-white`}>
+      <body className="bg-background-dark text-slate-100 font-display antialiased">
         <SessionProviderWrapper>
           <ThemeProvider
             attribute="class"

@@ -62,21 +62,26 @@ html {
 /* Esconder scrollbar mas manter funcionalidade */
 ::-webkit-scrollbar {
   width: 8px;
-  height: 8px;
+  height: 4px;
 }
-
 ::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.05);
+  background: #181511; 
 }
-
 ::-webkit-scrollbar-thumb {
-  background: #D4AF37;
-  /* Dourado */
+  background: #544b3b; 
   border-radius: 4px;
 }
-
 ::-webkit-scrollbar-thumb:hover {
-  background: #b5952f;
+  background: #f59f0a; 
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 /* Suprimir erros de hidratação */
@@ -102,8 +107,10 @@ html {
 }
 
 .glass-panel {
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: rgba(34, 28, 16, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(84, 75, 59, 0.5);
 }
 
 

@@ -14,12 +14,7 @@ async function askGroq(messages: { role: "system" | "user" | "assistant"; conten
     throw new Error("GROQ_API_KEY not set")
   }
 
-  let model = process.env.GROQ_MODEL ?? "llama-3.3-70b-versatile"
-
-  // Trata o caso onde a variável de ambiente na Vercel foi configurada incompleta
-  if (model === "llama-3.3-70b" || model === "llama-3") {
-    model = "llama-3.3-70b-versatile"
-  }
+  const model = process.env.GROQ_MODEL || "llama-3.1-8b-instant"
 
   console.log("-> Chamando Groq API com modelo:", model)
   console.error("Groq model em uso:", model)
