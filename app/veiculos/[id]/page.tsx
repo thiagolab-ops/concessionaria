@@ -38,7 +38,7 @@ export default function VehicleDetailsPage({ params }: { params: { id: string } 
         <div className="relative flex min-h-screen w-full flex-col bg-background-dark text-slate-100 max-w-screen-md mx-auto shadow-2xl">
 
             {/* Header Transparente */}
-            <header className="absolute top-0 left-0 right-0 z-50 flex items-center justify-between p-4">
+            <header className="absolute top-0 left-0 right-0 z-50 flex items-center justify-between p-4 pt-6">
                 <button
                     onClick={() => router.back()}
                     className="flex size-10 items-center justify-center rounded-full bg-black/40 backdrop-blur-md text-white hover:bg-black/60 transition"
@@ -46,12 +46,12 @@ export default function VehicleDetailsPage({ params }: { params: { id: string } 
                     <span className="material-symbols-outlined text-2xl">arrow_back</span>
                 </button>
                 <button className="flex size-10 items-center justify-center rounded-full bg-black/40 backdrop-blur-md text-white hover:bg-black/60 transition group">
-                    <span className="material-symbols-outlined text-2xl group-hover:text-primary transition-colors">favorite_border</span>
+                    <span className="material-symbols-outlined text-2xl group-hover:text-primary transition-colors">search</span>
                 </button>
             </header>
 
             {/* Hero Gallery */}
-            <section className="relative w-full">
+            <section className="relative w-full pt-20">
                 {/* Main Image */}
                 <div className="relative aspect-[4/3] w-full overflow-hidden bg-surface-dark">
                     <img

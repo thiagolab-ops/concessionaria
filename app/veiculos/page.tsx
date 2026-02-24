@@ -1,66 +1,32 @@
 "use client"
 import Link from 'next/link'
-import { useState, useMemo } from 'react'
-
-const MOCK_CARS = [
-    {
-        id: "clf201",
-        brand: "Fiat",
-        model: "Fastback",
-        year: 2024,
-        price: 105000,
-        category: "SUV",
-        status: "AVAILABLE",
-        image: "https://lh3.googleusercontent.com/aida-public/AB6AXuCjoPmSo54sNJXuzj6QpmjH8EcALLwAKXEkn0fAxIVj-TsTlHzjxvLM5UBi8HulMy8mZme1SzX2wIBUhFMxOuRntivf67yXTnUPY0ywQ1fATcIydKa5nzwXkP63BFUoFGyqpuIxxraoyDTiXMEkJ5yy0hZ1ByYiRbzJbkn2W6gmgcdfdGGyNEqg14ZmQuYKTFL695o9COQPDMhWoIDVqL6HubV9ureIYBbuvUe0m1xBooC0qLDdqKvS-nng-Bd_QQLFP_q8kME5y1E",
-        transmission: "Automático",
-        engine: "Turbo 200"
-    },
-    {
-        id: "clf202",
-        brand: "Nissan",
-        model: "Sentra",
-        year: 2023,
-        price: 128990,
-        category: "Sedan",
-        status: "AVAILABLE",
-        image: "https://lh3.googleusercontent.com/aida-public/AB6AXuC0eKq_tg9-8R6P0SXaugFeAT-LC3DREhgUuh9ab4bClOjkzSiUT_pycSkhlPNrv6SRv_n4D8rfafHcqtI87-_XgoJOuSZ7rGxpIIobokZHl1zdm9F-snYTidseu8gO_TWEBmhP1rOZUy7B0zhksrNpiX8XqRSmnCxtmFPw9uYChM22paB6DnKRFI6qyocZ9Edd1Ho5Yr3ns1oRIeUd9z2JCCYOK2SpYN1LDTJ6S-4pUClbme_giQGwGUSGWi5WSWU7XvXa2dngR6o",
-        transmission: "CVT",
-        engine: "Exclusive"
-    },
-    {
-        id: "clf203",
-        brand: "Volkswagen",
-        model: "Golf GTI",
-        year: 2024,
-        price: 239000,
-        category: "Hatch",
-        status: "AVAILABLE",
-        image: "https://lh3.googleusercontent.com/aida-public/AB6AXuB3WzAgDpGusaQn-GwOZ_POn1DjtPkSPYKUWebcTngYAeDQ8-gClR6Ebdd-evq4MEzi0aiM73qe2sCiKCH1KRMsWF9e7MI4xBIZ_csiemAqXyBgjq0OvdMFnEhERF1C2NSdtObdGS-gZhVqpGAASnSHhZIBWDzUu-1Xh3SaR_q-VcuVR-OFcLBXCXRAxeNOlTDzJahgXK1q3gV9F6lgLBa_npJHCRwhHqJskpSsX59hXQuvB3z6o6RT6MnL3vRJshKnNlFltNrFGgo",
-        transmission: "DSG",
-        engine: "Sport"
-    },
-    {
-        id: "clf204",
-        brand: "BMW",
-        model: "320i",
-        year: 2023,
-        price: 315000,
-        category: "Sedan",
-        status: "RESERVED",
-        image: "https://lh3.googleusercontent.com/aida-public/AB6AXuDN4v0YI6J65HzXOlI6dil4Bw4YeBwZ6ePjWBreXsMdST39OjwgBKceR4jaqBpO2exrEG7w0zvnOIA07L_YoZXtf3PkP_xPfqAD3BStEr1QOHt-6rgPL8m--1U_U30vV-UxtLbQbpZd-80ilP_k0DHyxgMNE_arcxdBmtgKgRiZ-XQNBDDkKTmSxy_E2UjEat0ZtCzbYai8Pu7lnmEtM6BwB8QEcmkpa3CtCEdJ9xMXYLXW-3SmJcV_xgu2Txp8Ndv4ClspEXaF1ME",
-        transmission: "Automático",
-        engine: "M Sport"
-    }
-]
+import { useState, useMemo, useEffect } from 'react'
 
 export default function VeiculosPage() {
     const [activeFilter, setActiveFilter] = useState<string>('Todos')
     const [searchQuery, setSearchQuery] = useState<string>('')
+    const [vehicles, setVehicles] = useState<any[]>([])
+    const [loading, setLoading] = useState(true)
 
     const filterOptions = ['Todos', 'Sedan', 'SUV', 'Hatch', 'Coupé', 'Elétrico']
 
+    useEffect(() => {
+        fetch('/api/veiculos')
+            .then(res => res.json())
+            .then(data => {
+                if (Array.isArray(data)) {
+                    // Filter to only AVAILABLE or allow RESERVED to show as well? 
+                    // Let's bring all but prioritize design. The user requested:
+                    // "busque os dados da tabela Vehicle no Prisma ... mapeie os cards dinamicamente"
+                    setVehicles(data)
+                }
+            })
+            .catch(console.error)
+            .finally(() => setLoading(false))
+    }, [])
+
     const filteredCars = useMemo(() => {
-        return MOCK_CARS.filter((car) => {
+        return vehicles.filter((car) => {
             const matchesFilter = activeFilter === 'Todos' || car.category === activeFilter
             const searchLower = searchQuery.toLowerCase()
             const matchesSearch =
@@ -70,7 +36,7 @@ export default function VeiculosPage() {
 
             return matchesFilter && matchesSearch
         })
-    }, [activeFilter, searchQuery])
+    }, [vehicles, activeFilter, searchQuery])
 
     return (
         <div className="relative flex h-full min-h-screen w-full max-w-screen-md flex-col overflow-x-hidden bg-white dark:bg-[#181511] shadow-2xl mx-auto">
@@ -81,6 +47,8 @@ export default function VeiculosPage() {
                         <span className="material-symbols-outlined text-2xl">arrow_back</span>
                     </Link>
                     <h2 className="font-header text-2xl font-bold uppercase tracking-wide text-slate-900 dark:text-white">Nossos Carros</h2>
+                    {/* Placeholder div to balance flex-between since removing calendar */}
+                    <div className="size-10"></div>
                 </div>
 
                 {/* Search Bar */}
@@ -99,7 +67,7 @@ export default function VeiculosPage() {
             </header>
 
             {/* Filters */}
-            <div className="sticky top-[136px] z-10 flex gap-3 overflow-x-auto px-4 py-4 bg-white dark:bg-[#181511] scrollbar-hide hide-scrollbar shadow-sm">
+            <div className="sticky top-[132px] z-10 flex gap-3 overflow-x-auto px-4 py-4 bg-white dark:bg-[#181511] scrollbar-hide hide-scrollbar shadow-sm">
                 {filterOptions.map((filter) => (
                     <button
                         key={filter}
@@ -116,19 +84,24 @@ export default function VeiculosPage() {
 
             {/* Car List */}
             <main className="flex flex-col gap-4 p-4 pb-24 min-h-[50vh]">
-                {filteredCars.length === 0 ? (
+                {loading ? (
+                    <div className="flex flex-col items-center justify-center h-full opacity-50 space-y-4 pt-10">
+                        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+                        <p className="text-text-secondary font-medium">Carregando catálogo...</p>
+                    </div>
+                ) : filteredCars.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-full opacity-50 space-y-4 pt-10">
                         <span className="material-symbols-outlined text-6xl text-text-secondary">directions_car</span>
-                        <p className="text-text-secondary font-medium">Nenhum veículo encontrado.</p>
+                        <p className="text-text-secondary font-medium">Nenhum veículo disponível no momento.</p>
                     </div>
                 ) : (
                     filteredCars.map((car) => {
                         const isUnavailable = car.status !== "AVAILABLE";
                         return (
-                            <div key={car.id} className={`@container group ${isUnavailable ? 'opacity-70 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-300' : ''}`}>
+                            <Link href={`/veiculos/${car.id}`} key={car.id} className={`@container group cursor-pointer ${isUnavailable ? 'opacity-70 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-300' : ''}`}>
                                 <div className="flex flex-col overflow-hidden rounded-2xl bg-slate-50 dark:bg-[#27231b] shadow-lg dark:shadow-[0_4px_20px_rgba(0,0,0,0.4)] transition-transform hover:-translate-y-1">
                                     <div className="relative aspect-[16/9] w-full overflow-hidden">
-                                        <div className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105" style={{ backgroundImage: `url("${car.image}")` }}></div>
+                                        <div className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105" style={{ backgroundImage: `url("${car.images?.[0] || ''}")` }}></div>
                                         {isUnavailable ? (
                                             <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
                                                 <span className="border-2 border-white px-4 py-1 text-sm font-bold uppercase text-white tracking-widest">{car.status === "RESERVED" ? "Reservado" : "Vendido"}</span>
@@ -145,18 +118,10 @@ export default function VeiculosPage() {
                                     <div className="flex flex-col p-4 @xl:p-6">
                                         <div className="mb-1 flex items-center justify-between">
                                             <h3 className="font-header text-xl font-bold uppercase tracking-wide text-slate-900 dark:text-white">{car.brand} {car.model}</h3>
-                                            <span className="material-symbols-outlined text-slate-400 cursor-pointer hover:text-primary">favorite_border</span>
+                                            <span className="material-symbols-outlined text-slate-400 cursor-pointer group-hover:text-primary">arrow_forward</span>
                                         </div>
                                         <div className="mb-4 flex flex-wrap gap-2">
                                             <span className="text-xs font-medium text-slate-500 dark:text-[#baaf9c]">{car.category}</span>
-                                            <span className="text-xs text-slate-400 dark:text-[#6b655b]">•</span>
-                                            {car.transmission && (
-                                                <>
-                                                    <span className="text-xs font-medium text-slate-500 dark:text-[#baaf9c]">{car.transmission}</span>
-                                                    <span className="text-xs text-slate-400 dark:text-[#6b655b]">•</span>
-                                                </>
-                                            )}
-                                            <span className="text-xs font-medium text-slate-500 dark:text-[#baaf9c]">{car.engine}</span>
                                         </div>
                                         <div className="flex items-end justify-between gap-4">
                                             <div>
@@ -166,18 +131,18 @@ export default function VeiculosPage() {
                                                 </p>
                                             </div>
                                             {isUnavailable ? (
-                                                <button className="flex h-10 items-center justify-center rounded-full bg-slate-200 dark:bg-[#393328]/50 px-4 text-sm font-bold text-slate-400 dark:text-slate-600 cursor-not-allowed" disabled>
+                                                <button className="flex h-10 items-center justify-center rounded-full bg-slate-200 dark:bg-[#393328]/50 px-4 text-sm font-bold text-slate-400 dark:text-slate-600 cursor-not-allowed" onClick={(e) => e.preventDefault()}>
                                                     Indisponível
                                                 </button>
                                             ) : (
-                                                <Link href={`/veiculos/${car.id}`} className="flex h-10 items-center justify-center rounded-full bg-white dark:bg-[#393328] px-4 text-sm font-bold text-slate-900 dark:text-white transition-colors hover:bg-primary hover:text-[#181511]">
+                                                <button className="flex h-10 items-center justify-center rounded-full bg-white dark:bg-[#393328] px-4 text-sm font-bold text-slate-900 dark:text-white transition-colors hover:bg-primary hover:text-[#181511]">
                                                     Detalhes
-                                                </Link>
+                                                </button>
                                             )}
                                         </div>
                                     </div>
                                 </div>
-                            </div>
+                            </Link>
                         )
                     })
                 )}
