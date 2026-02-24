@@ -4,6 +4,18 @@ import Link from 'next/link'
 export default function Home() {
   return (
     <div className="mx-auto min-h-screen w-full max-w-screen-md bg-background-dark relative shadow-2xl overflow-hidden flex flex-col">
+      <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="absolute top-0 left-0 w-full h-[80vh] object-cover opacity-40"
+        >
+          <source src="/hero-video.mp4" type="video/mp4" />
+        </video>
+        <div className="absolute inset-0 bg-gradient-to-b from-background-dark/80 via-transparent to-background-dark"></div>
+      </div>
       <header className="fixed top-0 left-0 right-0 z-50 mx-auto max-w-screen-md">
         <div className="glass-panel px-4 py-3 flex items-center justify-between border-b border-surface-border/30 rounded-b-2xl mx-2 mt-2">
           <div className="flex items-center gap-3">
@@ -203,9 +215,6 @@ export default function Home() {
           </div>
         </footer>
       </main>
-      <Link href="/chat" className="fixed bottom-6 right-6 z-50 flex items-center justify-center h-14 w-14 rounded-full bg-surface-dark border-2 border-primary shadow-[0_4px_20px_rgba(245,159,10,0.3)] text-primary hover:bg-primary hover:text-surface-dark transition-all duration-300 transform active:scale-90 group">
-        <span className="material-symbols-outlined text-2xl">chat</span>
-      </Link>
     </div>
   )
 }

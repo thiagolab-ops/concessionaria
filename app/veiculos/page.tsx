@@ -81,10 +81,6 @@ export default function VeiculosPage() {
                         <span className="material-symbols-outlined text-2xl">arrow_back</span>
                     </Link>
                     <h2 className="font-header text-2xl font-bold uppercase tracking-wide text-slate-900 dark:text-white">Nossos Carros</h2>
-                    <Link href="/admin" className="flex size-10 items-center justify-center rounded-full text-primary hover:bg-primary/10 transition-colors relative">
-                        <span className="material-symbols-outlined text-2xl">calendar_month</span>
-                        <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white dark:ring-[#181511]"></span>
-                    </Link>
                 </div>
 
                 {/* Search Bar */}
@@ -186,33 +182,6 @@ export default function VeiculosPage() {
                     })
                 )}
             </main>
-
-            {/* Bottom Navigation */}
-            <nav className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-center">
-                <div className="w-full max-w-screen-md border-t border-slate-200 dark:border-[#393328] bg-white/95 dark:bg-[#181511]/95 px-6 pb-6 pt-3 backdrop-blur-xl">
-                    <div className="flex items-center justify-between gap-2">
-                        <Link href="/" className="group flex flex-1 flex-col items-center justify-end gap-1 text-slate-400 dark:text-[#baaf9c] transition-colors hover:text-primary dark:hover:text-primary">
-                            <span className="material-symbols-outlined text-[28px] transition-transform group-hover:-translate-y-1">home</span>
-                            <p className="text-[10px] font-medium uppercase tracking-wider">Início</p>
-                        </Link>
-                        <Link href="/veiculos" className="group flex flex-1 flex-col items-center justify-end gap-1 text-primary">
-                            <div className="relative">
-                                <span className="material-symbols-outlined fill-current text-[28px]">directions_car</span>
-                                <span className="absolute -right-1 -top-1 size-2 rounded-full bg-primary"></span>
-                            </div>
-                            <p className="text-[10px] font-bold uppercase tracking-wider">Catálogo</p>
-                        </Link>
-                        <Link href="/favoritos" className="group flex flex-1 flex-col items-center justify-end gap-1 text-slate-400 dark:text-[#baaf9c] transition-colors hover:text-primary dark:hover:text-primary">
-                            <span className="material-symbols-outlined text-[28px] transition-transform group-hover:-translate-y-1">favorite</span>
-                            <p className="text-[10px] font-medium uppercase tracking-wider">Favoritos</p>
-                        </Link>
-                        <Link href="/perfil" className="group flex flex-1 flex-col items-center justify-end gap-1 text-slate-400 dark:text-[#baaf9c] transition-colors hover:text-primary dark:hover:text-primary">
-                            <span className="material-symbols-outlined text-[28px] transition-transform group-hover:-translate-y-1">person</span>
-                            <p className="text-[10px] font-medium uppercase tracking-wider">Perfil</p>
-                        </Link>
-                    </div>
-                </div>
-            </nav>
         </div>
     )
 }

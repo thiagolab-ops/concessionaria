@@ -5,6 +5,7 @@ import { ThemeProvider } from '@/components/theme-provider'
 import { Toaster } from '@/components/ui/toaster'
 import SessionProviderWrapper from '@/components/session-provider-wrapper'
 import { CartProvider } from '@/lib/cart-context'
+import Link from 'next/link'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,10 +13,10 @@ const metadataBase = process.env.NEXTAUTH_URL
   ? new URL(process.env.NEXTAUTH_URL)
   : new URL('http://localhost:3000')
 
-const appName = process.env.NEXT_PUBLIC_APP_NAME || 'The Barber'
-const appDescription = process.env.NEXT_PUBLIC_APP_DESCRIPTION || 'A melhor barbearia da cidade'
+const appName = process.env.NEXT_PUBLIC_APP_NAME || 'Luxe Motors'
+const appDescription = process.env.NEXT_PUBLIC_APP_DESCRIPTION || 'Concessionária de Luxo'
 const themeColor = process.env.NEXT_PUBLIC_THEME_COLOR || '#f59f0a'
-const secondaryColor = process.env.NEXT_PUBLIC_SECONDARY_COLOR || '#09090b'
+const secondaryColor = process.env.NEXT_PUBLIC_SECONDARY_COLOR || '#181511'
 
 export const metadata: Metadata = {
   metadataBase,
@@ -26,8 +27,8 @@ export const metadata: Metadata = {
     icon: '/favicon.svg',
     shortcut: '/favicon.svg',
     apple: [
-      { url: '/icons/icon-152x152.png', sizes: '152x152', type: 'image/png' },
-      { url: '/icons/icon-192x192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/favicon.svg', sizes: '152x152', type: 'image/svg+xml' },
+      { url: '/favicon.svg', sizes: '192x192', type: 'image/svg+xml' },
     ],
   },
   appleWebApp: {
@@ -38,7 +39,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: `${appName} - ${appDescription}`,
     description: appDescription,
-    images: ['/og-image.png'],
+    images: ['/favicon.svg'],
   },
   other: {
     'mobile-web-app-capable': 'yes',
@@ -62,7 +63,7 @@ export default function RootLayout({
         <meta name="theme-color" content={themeColor} />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
+        <link rel="apple-touch-icon" href="/favicon.svg" />
         <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
         <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;700&display=swap" rel="stylesheet" />
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&display=swap" rel="stylesheet" />
@@ -108,6 +109,9 @@ export default function RootLayout({
             <CartProvider>
               {children}
               <Toaster />
+              <Link href="/chat" className="fixed bottom-6 right-6 z-50 flex items-center justify-center h-14 w-14 rounded-full bg-surface-dark border-2 border-primary shadow-[0_4px_20px_rgba(245,159,10,0.3)] text-primary hover:bg-primary hover:text-surface-dark transition-all duration-300 transform active:scale-90 group">
+                <span className="material-symbols-outlined text-2xl">chat</span>
+              </Link>
             </CartProvider>
           </ThemeProvider>
         </SessionProviderWrapper>

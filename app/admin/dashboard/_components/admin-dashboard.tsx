@@ -3,8 +3,8 @@
 import { useState } from 'react'
 import { signOut } from 'next-auth/react'
 import { motion } from 'framer-motion'
-import { Sparkles, Package, Percent, Megaphone, Bell, ShoppingBag, LogOut, Settings, Folder, BarChart3 } from 'lucide-react'
-import CardapioTab from './cardapio-tab'
+import { Sparkles, Package, Percent, Megaphone, Bell, ShoppingBag, LogOut, Settings, Folder, BarChart3, Car } from 'lucide-react'
+import VeiculosTab from './veiculos-tab'
 import CombosTab from './combos-tab'
 import DescontosTab from './descontos-tab'
 import MarketingTab from './marketing-tab'
@@ -13,13 +13,13 @@ import CategoriasTab from './categorias-tab'
 import FinanceiroTab from './financeiro-tab'
 import PedidosTab from './pedidos-tab'
 
-type Tab = 'cardapio' | 'categorias' | 'combos' | 'descontos' | 'marketing' | 'pedidos' | 'configuracoes' | 'financeiro'
+type Tab = 'veiculos' | 'categorias' | 'combos' | 'descontos' | 'marketing' | 'pedidos' | 'configuracoes' | 'financeiro'
 
 export default function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState<Tab>('cardapio')
+  const [activeTab, setActiveTab] = useState<Tab>('veiculos')
 
   const tabs = [
-    { id: 'cardapio', label: 'Serviços', icon: Sparkles },
+    { id: 'veiculos', label: 'Veículos', icon: Car },
     { id: 'categorias', label: 'Categorias', icon: Folder },
     { id: 'combos', label: 'Combos', icon: Package },
     { id: 'descontos', label: 'Descontos', icon: Percent },
@@ -31,8 +31,8 @@ export default function AdminDashboard() {
 
   const renderTabContent = () => {
     switch (activeTab) {
-      case 'cardapio':
-        return <CardapioTab />
+      case 'veiculos':
+        return <VeiculosTab />
       case 'categorias':
         return <CategoriasTab />
       case 'combos':
@@ -58,8 +58,8 @@ export default function AdminDashboard() {
         <div className="container max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <h1 className="text-3xl font-bold text-gray-800 flex items-center gap-2">
-              <Sparkles className="w-8 h-8 text-primary" />
-              Bela Estética <span className="text-primary">Admin</span>
+              <Car className="w-8 h-8 text-primary" />
+              Luxe Motors <span className="text-primary">Admin</span>
             </h1>
             <button
               onClick={() => signOut({ callbackUrl: '/admin/login' })}
