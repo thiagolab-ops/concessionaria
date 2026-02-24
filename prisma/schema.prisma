@@ -182,3 +182,20 @@ model Settings {
   pixKey                String  @default("belaestetica@pix.com.br")
   updatedAt             DateTime @updatedAt
 }
+
+// Veículos da concessionária
+model Vehicle {
+  id              String   @id @default(cuid())
+  brand           String   // Marca (ex: BMW, Porsche)
+  model           String   // Modelo (ex: 320i M Sport)
+  year            Int      // Ano
+  price           Float    // Preço
+  description     String   @db.Text // Descrição completa
+  hasAuction      Boolean  @default(false) // Passagem por leilão
+  technicalSheet  Json?    // Ficha técnica (Motor, Câmbio, Tração, etc) em JSON
+  images          String[] // Array com até 10 URLs de imagens
+  category        String   // Sedan, SUV, Hatch, etc
+  status          String   @default("AVAILABLE") // AVAILABLE, RESERVED, SOLD
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
