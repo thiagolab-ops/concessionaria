@@ -22,7 +22,6 @@ export default function VeiculosTab() {
         status: 'AVAILABLE'
     })
     const [existingImages, setExistingImages] = useState<string[]>([])
-    const [selectedFiles, setSelectedFiles] = useState<File[]>([])
     const [isSaving, setIsSaving] = useState(false)
 
     const loadVehicles = async () => {
@@ -48,32 +47,9 @@ export default function VeiculosTab() {
         setIsSaving(true)
 
         try {
-            let uploadedUrls: string[] = []
-
-            if (selectedFiles.length > 0) {
-                const uploadData = new FormData()
-                selectedFiles.forEach(file => uploadData.append('files', file))
-
-                const uploadResp = await fetch('/api/upload', {
-                    method: 'POST',
-                    body: uploadData
-                })
-
-                if (uploadResp.ok) {
-                    const uploadResult = await uploadResp.json()
-                    uploadedUrls = uploadResult.urls
-                } else {
-                    toast.error('Erro ao fazer upload das imagens')
-                    setIsSaving(false)
-                    return
-                }
-            }
-
-            const finalImages = [...existingImages, ...uploadedUrls]
-
             const url = editingVehicle ? `/api/veiculos/${editingVehicle.id}` : '/api/veiculos'
             const method = editingVehicle ? 'PUT' : 'POST'
-            const payload = { ...formData, images: finalImages }
+            const payload = { ...formData, images: existingImages }
 
             const resp = await fetch(url, {
                 method,
@@ -115,7 +91,6 @@ export default function VeiculosTab() {
     const openEditModal = (vehicle: any) => {
         setEditingVehicle(vehicle)
         setExistingImages(vehicle.images || [])
-        setSelectedFiles([])
         setFormData({
             brand: vehicle.brand,
             model: vehicle.model,
@@ -132,7 +107,6 @@ export default function VeiculosTab() {
     const resetForm = () => {
         setEditingVehicle(null)
         setExistingImages([])
-        setSelectedFiles([])
         setFormData({
             brand: '',
             model: '',
@@ -269,15 +243,30 @@ export default function VeiculosTab() {
                                         type="file"
                                         multiple
                                         accept="image/*"
-                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                                        onChange={(e) => {
+                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                        onChange={async (e) => {
                                             if (e.target.files) {
                                                 const newFiles = Array.from(e.target.files)
-                                                if (existingImages.length + selectedFiles.length + newFiles.length > 10) {
+                                                if (existingImages.length + newFiles.length > 10) {
                                                     toast.error('Limite máximo de 10 imagens excedido.')
                                                     return
                                                 }
-                                                setSelectedFiles([...selectedFiles, ...newFiles])
+
+                                                try {
+                                                    const base64Images = await Promise.all(
+                                                        newFiles.map((file) => {
+                                                            return new Promise<string>((resolve, reject) => {
+                                                                const reader = new FileReader();
+                                                                reader.readAsDataURL(file);
+                                                                reader.onload = () => resolve(reader.result as string);
+                                                                reader.onerror = (error) => reject(error);
+                                                            });
+                                                        })
+                                                    );
+                                                    setExistingImages((prev) => [...prev, ...base64Images])
+                                                } catch (err) {
+                                                    toast.error('Erro ao converter imagens')
+                                                }
                                             }
                                         }}
                                     />
@@ -286,20 +275,12 @@ export default function VeiculosTab() {
                                 </div>
 
                                 {/* Previews */}
-                                {(existingImages.length > 0 || selectedFiles.length > 0) && (
+                                {existingImages.length > 0 && (
                                     <div className="mt-4 flex flex-wrap gap-3">
                                         {existingImages.map((img, idx) => (
-                                            <div key={`existing-${idx}`} className="relative size-20 rounded-md overflow-hidden border border-gray-200">
+                                            <div key={`existing-${idx}`} className="relative size-20 rounded-md overflow-hidden border border-gray-200 group">
                                                 <img src={img} alt="Preview" className="w-full h-full object-cover" />
-                                                <button type="button" onClick={() => setExistingImages(existingImages.filter((_, i) => i !== idx))} className="absolute top-1 right-1 bg-black/60 rounded-full text-white p-1 hover:bg-red-500 transition">
-                                                    <X className="w-3 h-3" />
-                                                </button>
-                                            </div>
-                                        ))}
-                                        {selectedFiles.map((file, idx) => (
-                                            <div key={`new-${idx}`} className="relative size-20 rounded-md overflow-hidden border border-primary">
-                                                <img src={URL.createObjectURL(file)} alt="Preview" className="w-full h-full object-cover" />
-                                                <button type="button" onClick={() => setSelectedFiles(selectedFiles.filter((_, i) => i !== idx))} className="absolute top-1 right-1 bg-black/60 rounded-full text-white p-1 hover:bg-red-500 transition">
+                                                <button type="button" onClick={() => setExistingImages(existingImages.filter((_, i) => i !== idx))} className="absolute top-1 right-1 bg-black/60 rounded-full text-white p-1 hover:bg-red-500 transition opacity-0 group-hover:opacity-100">
                                                     <X className="w-3 h-3" />
                                                 </button>
                                             </div>
