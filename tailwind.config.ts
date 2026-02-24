@@ -60,7 +60,6 @@ const config: Config = {
           '4': 'hsl(var(--chart-4))',
           '5': 'hsl(var(--chart-5))',
         },
-        'primary': '#f59f0a',
         'primary-dark': '#b45309',
         'background-dark': '#181511',
         'surface-dark': '#221c10',

@@ -19,9 +19,11 @@ export default function VeiculosTab() {
         category: 'Sedan',
         description: '',
         hasAuction: false,
-        images: '',
         status: 'AVAILABLE'
     })
+    const [existingImages, setExistingImages] = useState<string[]>([])
+    const [selectedFiles, setSelectedFiles] = useState<File[]>([])
+    const [isSaving, setIsSaving] = useState(false)
 
     const loadVehicles = async () => {
         try {
@@ -43,18 +45,40 @@ export default function VeiculosTab() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
+        setIsSaving(true)
 
         try {
-            const url = editingVehicle
-                ? `/api/veiculos/${editingVehicle.id}`
-                : '/api/veiculos'
+            let uploadedUrls: string[] = []
 
+            if (selectedFiles.length > 0) {
+                const uploadData = new FormData()
+                selectedFiles.forEach(file => uploadData.append('files', file))
+
+                const uploadResp = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: uploadData
+                })
+
+                if (uploadResp.ok) {
+                    const uploadResult = await uploadResp.json()
+                    uploadedUrls = uploadResult.urls
+                } else {
+                    toast.error('Erro ao fazer upload das imagens')
+                    setIsSaving(false)
+                    return
+                }
+            }
+
+            const finalImages = [...existingImages, ...uploadedUrls]
+
+            const url = editingVehicle ? `/api/veiculos/${editingVehicle.id}` : '/api/veiculos'
             const method = editingVehicle ? 'PUT' : 'POST'
+            const payload = { ...formData, images: finalImages }
 
             const resp = await fetch(url, {
                 method,
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData)
+                body: JSON.stringify(payload)
             })
 
             if (resp.ok) {
@@ -67,6 +91,8 @@ export default function VeiculosTab() {
             }
         } catch (error) {
             toast.error('Erro interno ao salvar')
+        } finally {
+            setIsSaving(false)
         }
     }
 
@@ -88,6 +114,8 @@ export default function VeiculosTab() {
 
     const openEditModal = (vehicle: any) => {
         setEditingVehicle(vehicle)
+        setExistingImages(vehicle.images || [])
+        setSelectedFiles([])
         setFormData({
             brand: vehicle.brand,
             model: vehicle.model,
@@ -96,7 +124,6 @@ export default function VeiculosTab() {
             category: vehicle.category,
             description: vehicle.description,
             hasAuction: vehicle.hasAuction,
-            images: vehicle.images.join(', '),
             status: vehicle.status
         })
         setIsModalOpen(true)
@@ -104,6 +131,8 @@ export default function VeiculosTab() {
 
     const resetForm = () => {
         setEditingVehicle(null)
+        setExistingImages([])
+        setSelectedFiles([])
         setFormData({
             brand: '',
             model: '',
@@ -112,7 +141,6 @@ export default function VeiculosTab() {
             category: 'Sedan',
             description: '',
             hasAuction: false,
-            images: '',
             status: 'AVAILABLE'
         })
     }
@@ -235,8 +263,49 @@ export default function VeiculosTab() {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">URLs das Imagens (separadas por vírgula)</label>
-                                <textarea value={formData.images} onChange={e => setFormData({ ...formData, images: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-black h-20" placeholder="https://imagem1.jpg, https://imagem2.jpg..." />
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Imagens do Veículo (Máx. 10)</label>
+                                <div className="border border-dashed border-gray-300 rounded-lg p-4 text-center hover:bg-gray-50 transition cursor-pointer relative">
+                                    <input
+                                        type="file"
+                                        multiple
+                                        accept="image/*"
+                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                        onChange={(e) => {
+                                            if (e.target.files) {
+                                                const newFiles = Array.from(e.target.files)
+                                                if (existingImages.length + selectedFiles.length + newFiles.length > 10) {
+                                                    toast.error('Limite máximo de 10 imagens excedido.')
+                                                    return
+                                                }
+                                                setSelectedFiles([...selectedFiles, ...newFiles])
+                                            }
+                                        }}
+                                    />
+                                    <span className="material-symbols-outlined text-4xl text-gray-400 mb-2">add_photo_alternate</span>
+                                    <p className="text-sm font-medium text-gray-700">Clique para selecionar ou arraste imagens aqui</p>
+                                </div>
+
+                                {/* Previews */}
+                                {(existingImages.length > 0 || selectedFiles.length > 0) && (
+                                    <div className="mt-4 flex flex-wrap gap-3">
+                                        {existingImages.map((img, idx) => (
+                                            <div key={`existing-${idx}`} className="relative size-20 rounded-md overflow-hidden border border-gray-200">
+                                                <img src={img} alt="Preview" className="w-full h-full object-cover" />
+                                                <button type="button" onClick={() => setExistingImages(existingImages.filter((_, i) => i !== idx))} className="absolute top-1 right-1 bg-black/60 rounded-full text-white p-1 hover:bg-red-500 transition">
+                                                    <X className="w-3 h-3" />
+                                                </button>
+                                            </div>
+                                        ))}
+                                        {selectedFiles.map((file, idx) => (
+                                            <div key={`new-${idx}`} className="relative size-20 rounded-md overflow-hidden border border-primary">
+                                                <img src={URL.createObjectURL(file)} alt="Preview" className="w-full h-full object-cover" />
+                                                <button type="button" onClick={() => setSelectedFiles(selectedFiles.filter((_, i) => i !== idx))} className="absolute top-1 right-1 bg-black/60 rounded-full text-white p-1 hover:bg-red-500 transition">
+                                                    <X className="w-3 h-3" />
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
 
                             <div className="flex items-center gap-2">
@@ -245,9 +314,9 @@ export default function VeiculosTab() {
                             </div>
 
                             <div className="pt-4 flex justify-end gap-3 border-t border-gray-100">
-                                <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-gray-600 font-medium hover:bg-gray-100 rounded-lg transition">Cancelar</button>
-                                <button type="submit" className="px-6 py-2 bg-primary text-black font-bold rounded-lg hover:bg-primary/90 transition shadow-sm">
-                                    {editingVehicle ? 'Salvar Alterações' : 'Cadastrar Veículo'}
+                                <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-gray-600 font-medium hover:bg-gray-100 rounded-lg transition" disabled={isSaving}>Cancelar</button>
+                                <button type="submit" disabled={isSaving} className="px-6 py-2 bg-primary text-black font-bold rounded-lg hover:bg-primary/90 transition shadow-sm disabled:opacity-50">
+                                    {isSaving ? 'Salvando...' : editingVehicle ? 'Salvar Alterações' : 'Cadastrar Veículo'}
                                 </button>
                             </div>
                         </form>

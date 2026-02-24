@@ -1,80 +1,45 @@
-"use client"
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { useState } from 'react'
+import { prisma } from '@/lib/db'
+import { notFound } from 'next/navigation'
+import { VehicleGallery } from './_components/vehicle-gallery'
 
-const MOCK_VEHICLE = {
-    id: "clf201",
-    brand: "BMW",
-    model: "320i M Sport",
-    year: 2023,
-    price: 315000,
-    category: "Sedan",
-    hasAuction: false,
-    status: "AVAILABLE",
-    images: [
-        "https://lh3.googleusercontent.com/aida-public/AB6AXuDN4v0YI6J65HzXOlI6dil4Bw4YeBwZ6ePjWBreXsMdST39OjwgBKceR4jaqBpO2exrEG7w0zvnOIA07L_YoZXtf3PkP_xPfqAD3BStEr1QOHt-6rgPL8m--1U_U30vV-UxtLbQbpZd-80ilP_k0DHyxgMNE_arcxdBmtgKgRiZ-XQNBDDkKTmSxy_E2UjEat0ZtCzbYai8Pu7lnmEtM6BwB8QEcmkpa3CtCEdJ9xMXYLXW-3SmJcV_xgu2Txp8Ndv4ClspEXaF1ME",
-        "https://lh3.googleusercontent.com/aida-public/AB6AXuB3WzAgDpGusaQn-GwOZ_POn1DjtPkSPYKUWebcTngYAeDQ8-gClR6Ebdd-evq4MEzi0aiM73qe2sCiKCH1KRMsWF9e7MI4xBIZ_csiemAqXyBgjq0OvdMFnEhERF1C2NSdtObdGS-gZhVqpGAASnSHhZIBWDzUu-1Xh3SaR_q-VcuVR-OFcLBXCXRAxeNOlTDzJahgXK1q3gV9F6lgLBa_npJHCRwhHqJskpSsX59hXQuvB3z6o6RT6MnL3vRJshKnNlFltNrFGgo",
-        "https://lh3.googleusercontent.com/aida-public/AB6AXuC0eKq_tg9-8R6P0SXaugFeAT-LC3DREhgUuh9ab4bClOjkzSiUT_pycSkhlPNrv6SRv_n4D8rfafHcqtI87-_XgoJOuSZ7rGxpIIobokZHl1zdm9F-snYTidseu8gO_TWEBmhP1rOZUy7B0zhksrNpiX8XqRSmnCxtmFPw9uYChM22paB6DnKRFI6qyocZ9Edd1Ho5Yr3ns1oRIeUd9z2JCCYOK2SpYN1LDTJ6S-4pUClbme_giQGwGUSGWi5WSWU7XvXa2dngR6o",
-        "https://lh3.googleusercontent.com/aida-public/AB6AXuCjoPmSo54sNJXuzj6QpmjH8EcALLwAKXEkn0fAxIVj-TsTlHzjxvLM5UBi8HulMy8mZme1SzX2wIBUhFMxOuRntivf67yXTnUPY0ywQ1fATcIydKa5nzwXkP63BFUoFGyqpuIxxraoyDTiXMEkJ5yy0hZ1ByYiRbzJbkn2W6gmgcdfdGGyNEqg14ZmQuYKTFL695o9COQPDMhWoIDVqL6HubV9ureIYBbuvUe0m1xBooC0qLDdqKvS-nng-Bd_QQLFP_q8kME5y1E"
-    ],
-    specs: {
-        engine: "2.0 Turbo",
-        transmission: "Automático 8M",
-        fuel: "Flex",
-        mileage: "15.000 km",
-    },
-    description: "Veículo impecável, único dono, com todas as revisões feitas em concessionária. A versão M Sport oferece o máximo em desempenho e sofisticação, com interior em couro Premium, teto solar, painel digital, e pacote de segurança completo. Não perca essa oportunidade de realizar o seu sonho com a Luxe Motors."
-}
+export default async function VehicleDetailsPage({ params }: { params: { id: string } }) {
+    const vehicle = await prisma.vehicle.findUnique({
+        where: { id: params.id }
+    })
 
-export default function VehicleDetailsPage({ params }: { params: { id: string } }) {
-    const router = useRouter()
-    const [activeImage, setActiveImage] = useState(0)
+    if (!vehicle) {
+        notFound()
+    }
 
-    // Em um app real faríamos um fetch ao prisma aqui usando useParams/params.id
-    const vehicle = MOCK_VEHICLE
+    // Since technicalSheet is JSON, we can try to extract specs or use generic ones
+    const specs = vehicle.technicalSheet as any || {
+        engine: 'Consultar',
+        transmission: 'Consultar',
+        fuel: 'Flex',
+        mileage: '0 km'
+    }
+
+    // Default message for whatsapp
+    const whatsappMessage = `Olá, vim pelo site e tenho interesse no ${vehicle.brand} ${vehicle.model} - ${vehicle.year}.`
+    const whatsappUrl = `https://wa.me/5511999999999?text=${encodeURIComponent(whatsappMessage)}`
 
     return (
         <div className="relative flex min-h-screen w-full flex-col bg-background-dark text-slate-100 max-w-screen-md mx-auto shadow-2xl">
-
             {/* Header Transparente */}
             <header className="absolute top-0 left-0 right-0 z-50 flex items-center justify-between p-4 pt-6">
-                <button
-                    onClick={() => router.back()}
+                <Link
+                    href="/veiculos"
                     className="flex size-10 items-center justify-center rounded-full bg-black/40 backdrop-blur-md text-white hover:bg-black/60 transition"
                 >
                     <span className="material-symbols-outlined text-2xl">arrow_back</span>
-                </button>
+                </Link>
                 <button className="flex size-10 items-center justify-center rounded-full bg-black/40 backdrop-blur-md text-white hover:bg-black/60 transition group">
                     <span className="material-symbols-outlined text-2xl group-hover:text-primary transition-colors">search</span>
                 </button>
             </header>
 
-            {/* Hero Gallery */}
-            <section className="relative w-full pt-20">
-                {/* Main Image */}
-                <div className="relative aspect-[4/3] w-full overflow-hidden bg-surface-dark">
-                    <img
-                        src={vehicle.images[activeImage]}
-                        alt={`${vehicle.brand} ${vehicle.model}`}
-                        className="absolute inset-0 h-full w-full object-cover transition-opacity duration-300"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-background-dark via-transparent to-black/20" />
-                </div>
-
-                {/* Thumbnails */}
-                <div className="relative -mt-10 mb-6 flex gap-3 overflow-x-auto hide-scrollbar px-4 pb-2 z-10 w-full scroll-smooth">
-                    {vehicle.images.map((img, idx) => (
-                        <button
-                            key={idx}
-                            onClick={() => setActiveImage(idx)}
-                            className={`relative size-20 shrink-0 overflow-hidden rounded-xl border-2 transition-all ${activeImage === idx ? 'border-primary shadow-[0_0_15px_rgba(245,159,10,0.4)] scale-105' : 'border-surface-border opacity-60 hover:opacity-100'}`}
-                        >
-                            <img src={img} className="h-full w-full object-cover" alt="Thumb" />
-                        </button>
-                    ))}
-                </div>
-            </section>
+            <VehicleGallery images={vehicle.images} brand={vehicle.brand} model={vehicle.model} />
 
             {/* Content Area */}
             <main className="flex-1 px-5 pb-32">
@@ -94,7 +59,7 @@ export default function VehicleDetailsPage({ params }: { params: { id: string } 
                             </span>
                         ) : (
                             <span className="px-3 py-1 rounded-full bg-green-900/40 border border-green-500/50 text-[10px] font-bold uppercase tracking-wider text-green-400">
-                                Laudo Cautelar Aprovado
+                                Laudo Aprovado
                             </span>
                         )}
                     </div>
@@ -106,7 +71,7 @@ export default function VehicleDetailsPage({ params }: { params: { id: string } 
                     <div className="flex flex-col">
                         <span className="text-xs text-text-secondary font-medium uppercase tracking-widest">Preço à vista</span>
                         <span className="font-header text-4xl font-bold text-primary tracking-tight">
-                            R$ {vehicle.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(vehicle.price)}
                         </span>
                     </div>
                 </div>
@@ -119,28 +84,28 @@ export default function VehicleDetailsPage({ params }: { params: { id: string } 
                             <span className="material-symbols-outlined text-primary text-2xl">settings</span>
                             <div>
                                 <p className="text-[10px] text-text-secondary uppercase font-bold tracking-wider">Câmbio</p>
-                                <p className="text-sm font-semibold text-white">{vehicle.specs.transmission}</p>
+                                <p className="text-sm font-semibold text-white">{specs.transmission}</p>
                             </div>
                         </div>
                         <div className="flex items-center gap-3 p-4 rounded-2xl bg-surface-dark border border-surface-border/50">
                             <span className="material-symbols-outlined text-primary text-2xl">local_gas_station</span>
                             <div>
                                 <p className="text-[10px] text-text-secondary uppercase font-bold tracking-wider">Combustível</p>
-                                <p className="text-sm font-semibold text-white">{vehicle.specs.fuel}</p>
+                                <p className="text-sm font-semibold text-white">{specs.fuel}</p>
                             </div>
                         </div>
                         <div className="flex items-center gap-3 p-4 rounded-2xl bg-surface-dark border border-surface-border/50">
                             <span className="material-symbols-outlined text-primary text-2xl">speed</span>
                             <div>
                                 <p className="text-[10px] text-text-secondary uppercase font-bold tracking-wider">Quilometragem</p>
-                                <p className="text-sm font-semibold text-white">{vehicle.specs.mileage}</p>
+                                <p className="text-sm font-semibold text-white">{specs.mileage}</p>
                             </div>
                         </div>
                         <div className="flex items-center gap-3 p-4 rounded-2xl bg-surface-dark border border-surface-border/50">
                             <span className="material-symbols-outlined text-primary text-2xl">directions_car</span>
                             <div>
                                 <p className="text-[10px] text-text-secondary uppercase font-bold tracking-wider">Motor</p>
-                                <p className="text-sm font-semibold text-white">{vehicle.specs.engine}</p>
+                                <p className="text-sm font-semibold text-white">{specs.engine}</p>
                             </div>
                         </div>
                     </div>
@@ -150,7 +115,7 @@ export default function VehicleDetailsPage({ params }: { params: { id: string } 
                 <div>
                     <h3 className="text-xs text-text-secondary font-black tracking-widest uppercase mb-4">Sobre o Veículo</h3>
                     <div className="p-5 rounded-2xl bg-surface-dark/50 border border-surface-border/30">
-                        <p className="text-sm text-gray-300 leading-relaxed">
+                        <p className="text-sm text-gray-300 leading-relaxed whitespace-pre-wrap">
                             {vehicle.description}
                         </p>
                     </div>
@@ -159,14 +124,12 @@ export default function VehicleDetailsPage({ params }: { params: { id: string } 
 
             {/* Sticky Bottom Bar */}
             <div className="fixed bottom-0 left-0 right-0 z-[40] w-full max-w-screen-md mx-auto pointer-events-none">
-                {/* Gradient fade to prevent sharp text clipping */}
                 <div className="h-10 bg-gradient-to-t from-background-dark to-transparent w-full absolute -top-10" />
 
                 <div className="bg-background-dark/95 backdrop-blur-xl border-t border-surface-border px-4 py-4 pb-6 safely-padding-bottom pointer-events-auto">
-                    {/* Adicionando pr-20 para não ficar por baixo do botão do chatbot que tem bottom-6 right-6 */}
                     <div className="flex gap-3 pr-20">
                         <a
-                            href="https://wa.me/5511999999999?text=Olá, tenho interesse no BMW 320i M Sport!"
+                            href={whatsappUrl}
                             target="_blank"
                             rel="noreferrer"
                             className="flex items-center justify-center shrink-0 w-[60px] h-[60px] rounded-2xl bg-[#25D366] hover:bg-[#20bd5a] transition active:scale-95 shadow-lg shadow-[#25D366]/20"
