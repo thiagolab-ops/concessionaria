@@ -1,0 +1,184 @@
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+// Usuários do sistema (admin)
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  password      String
+  role          String    @default("user")
+  accounts      Account[]
+  sessions      Session[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// Categorias do cardápio/serviços
+model Category {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  order     Int       @default(0) // Para ordenar
+  isActive  Boolean   @default(true)
+  services  Service[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+// Serviços prestados
+model Service {
+  id           String    @id @default(cuid())
+  name         String
+  price        Float
+  duration     Int       // Duração do serviço em minutos
+  description  String    @db.Text
+  ingredients  String    @db.Text
+  imageUrl     String
+  category     String    // Mantido para compatibilidade
+  categoryId   String?
+  categoryRef  Category? @relation(fields: [categoryId], references: [id])
+  tags         String[]  // Vegano, Sem Glúten, Novidade, Mais Vendido, Oferta
+  isVegan      Boolean   @default(false)
+  isGlutenFree Boolean   @default(false)
+  isNew        Boolean   @default(false)
+  isBestSeller Boolean   @default(false)
+  isOffer      Boolean   @default(false)
+  isAvailable  Boolean   @default(true)
+  extras       Json?     // Lista de adicionais
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+// Combos
+model Combo {
+  id          String   @id @default(cuid())
+  name        String
+  price       Float
+  description String   @db.Text
+  serviceIds  String[] // IDs dos serviços incluídos
+  imageUrl    String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// Promoções
+model Promotion {
+  id                String   @id @default(cuid())
+  name              String
+  description       String   @db.Text
+  serviceIds        String[] // IDs dos serviços em promoção
+  discountPercentage Float   @default(0) // Porcentagem de desconto
+  startDate         DateTime
+  endDate           DateTime
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+// Cupons de desconto
+model Coupon {
+  id            String    @id @default(cuid())
+  code          String    @unique
+  discountType  String    // percentage ou fixed
+  discountValue Float
+  usageLimit    Int
+  usageCount    Int       @default(0)
+  validUntil    DateTime? // Data de validade
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+// Programa de fidelidade
+model Loyalty {
+  id            String   @id @default(cuid())
+  phone         String   @unique
+  purchaseCount Int      @default(0)
+  hasFreePizza  Boolean  @default(false) // Deixando compatible
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+// Dados de clientes para auto-preenchimento
+model Customer {
+  id         String   @id @default(cuid())
+  phone      String   @unique
+  name       String?
+  rua        String?
+  numero     String?
+  bairro     String?
+  referencia String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+// Agendamentos de Serviços
+model Appointment {
+  id             String   @id @default(cuid())
+  items          Json     // Array de serviços agendados
+  customerName   String?
+  customerPhone  String
+  paymentMethod  String   // PIX ou LOCAL
+  status         String   @default("PENDING") // PENDING, CONFIRMED, COMPLETED, CANCELED
+  observations   String?  // Observações adicionais
+  total          Float
+  scheduledTime  DateTime // Horário agendado do serviço
+  confirmedAt    DateTime? // Data/hora da confirmação do agendamento
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+// Configurações globais
+model Settings {
+  id                    String  @id @default(cuid())
+  discountPercentage    Float   @default(0)
+  discountActive        Boolean @default(false)
+  loyaltyPurchasesNeeded Int    @default(10) // A cada X serviços
+  whatsappNumber        String  @default("5511999999999")
+  pixKey                String  @default("belaestetica@pix.com.br")
+  updatedAt             DateTime @updatedAt
+}
