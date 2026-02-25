@@ -1,12 +1,26 @@
 "use client"
 import Link from 'next/link'
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
+
+function SearchFocusEffect({ inputRef }: { inputRef: React.RefObject<HTMLInputElement> }) {
+    const searchParams = useSearchParams()
+
+    useEffect(() => {
+        if (searchParams?.get("search") === "focus" && inputRef.current) {
+            inputRef.current.focus()
+        }
+    }, [searchParams, inputRef])
+
+    return null
+}
 
 export default function VeiculosPage() {
     const [activeFilter, setActiveFilter] = useState<string>('Todos')
     const [searchQuery, setSearchQuery] = useState<string>('')
     const [vehicles, setVehicles] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
+    const searchInputRef = useRef<HTMLInputElement>(null)
 
     const filterOptions = ['Todos', 'Sedan', 'SUV', 'Hatch', 'Coupé', 'Elétrico']
 
@@ -53,9 +67,13 @@ export default function VeiculosPage() {
 
                 {/* Search Bar */}
                 <div className="px-4 pb-4">
+                    <Suspense fallback={null}>
+                        <SearchFocusEffect inputRef={searchInputRef} />
+                    </Suspense>
                     <div className="relative flex items-center w-full h-12 rounded-full bg-surface-dark border border-surface-border text-white px-4 shadow-sm focus-within:border-primary focus-within:ring-1 focus-within:ring-primary transition-all">
                         <span className="material-symbols-outlined text-text-secondary mr-2">search</span>
                         <input
+                            ref={searchInputRef}
                             type="text"
                             placeholder="Buscar marca, modelo ou ano..."
                             className="bg-transparent border-none outline-none w-full text-sm placeholder-text-secondary/70 focus:ring-0"

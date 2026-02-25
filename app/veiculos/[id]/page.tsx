@@ -34,9 +34,13 @@ export default async function VehicleDetailsPage({ params }: { params: { id: str
                 >
                     <span className="material-symbols-outlined text-2xl">arrow_back</span>
                 </Link>
-                <button className="flex size-10 items-center justify-center rounded-full bg-black/40 backdrop-blur-md text-white hover:bg-black/60 transition group">
+                <Link
+                    href="/veiculos?search=focus"
+                    className="flex size-10 items-center justify-center rounded-full bg-black/40 backdrop-blur-md text-white hover:bg-black/60 transition group"
+                    aria-label="Buscar outro veículo"
+                >
                     <span className="material-symbols-outlined text-2xl group-hover:text-primary transition-colors">search</span>
-                </button>
+                </Link>
             </header>
 
             <div className="pt-24 px-4 mb-8">
