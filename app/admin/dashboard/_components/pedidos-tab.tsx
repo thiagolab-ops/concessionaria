@@ -1,161 +1,107 @@
 ﻿'use client'
 
 import { useState, useEffect } from 'react'
-import { ShoppingBag, CheckCircle, Scissors, Truck, Package, Clock, X, CheckCheck, CheckCircle2 } from 'lucide-react'
+import { Calendar as CalendarIcon, CheckCircle, Clock, X, CheckCheck, CheckCircle2, Car } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { toast } from 'react-hot-toast'
 import { motion, AnimatePresence } from 'framer-motion'
 
-const ESTIMATED_TIMES = [
-  '20-30 min',
-  '30-45 min',
-  '45-60 min',
-  '60-90 min',
-  '90+ min',
-]
-
-import { mockAdminOrders } from '@/lib/admin-mock-data'
-
 export default function PedidosTab() {
-  const [orders, setOrders] = useState<any[]>([])
+  const [bookings, setBookings] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('Todos')
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list')
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
 
-  // Modal de confirmação com tempo estimado
+  // Modal de confirmação
   const [showConfirmModal, setShowConfirmModal] = useState(false)
-  const [selectedOrder, setSelectedOrder] = useState<any>(null)
-  const [selectedTime, setSelectedTime] = useState('30-45 min')
+  const [selectedBooking, setSelectedBooking] = useState<any>(null)
 
   useEffect(() => {
-    fetchAppointments()
-    const interval = setInterval(fetchAppointments, 5000)
+    fetchBookings()
+    const interval = setInterval(fetchBookings, 10000) // 10s pra não pesar muito
     return () => clearInterval(interval)
   }, [])
 
-  const fetchAppointments = async () => {
+  const fetchBookings = async () => {
     try {
-      const res = await fetch('/api/admin/pedidos')
+      const res = await fetch('/api/bookings')
       if (!res.ok) throw new Error('Falha na API')
 
       const data = await res.json()
 
-      const remoteAppointments = data.appointments || []
-      mergeWithLocalStatus(remoteAppointments)
-
+      // Filtra por data selecionada se estiver no modo calendário
+      setBookings(data)
     } catch (error) {
-      console.error('Erro ao carregar agendamentos (usando mock):', error)
-      // Fallback para dados mockados em caso de erro (ex: sem banco)
-      mergeWithLocalStatus(mockAdminOrders)
+      console.error('Erro ao carregar agendamentos:', error)
+      toast.error('Não foi possível carregar os agendamentos em tempo real.')
     } finally {
       setLoading(false)
     }
   }
 
-  // FunÃ§Ã£o para mesclar agendamentos (API ou Mock) com status salvos localmente
-  const mergeWithLocalStatus = (baseOrders: any[]) => {
-    const updatedOrders = baseOrders.map((order: any) => {
-      const localStatus = localStorage.getItem(`order_status_${order.id}`)
-      return localStatus ? { ...order, status: localStatus } : order
-    })
-
-    // Filtro para garantir que a ordem seja consistente (mais recentes primeiro)
-    updatedOrders.sort((a: any, b: any) =>
-      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    )
-
-    setOrders(updatedOrders)
-  }
-
-  const updateOrderStatus = async (orderId: string, newStatus: string, estimatedTime?: string) => {
-    // 1. Tenta atualizar na API
+  const updateBookingStatus = async (bookingId: string, newStatus: string) => {
     try {
-      const body: any = { status: newStatus }
-      if (estimatedTime) {
-        body.estimatedTime = estimatedTime
-      }
-
-      await fetch(`/api/admin/pedidos/${orderId}`, {
+      const res = await fetch(`/api/bookings/${bookingId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
+        body: JSON.stringify({ status: newStatus }),
       })
-      // NÃ£o importa se deu erro 500 ou 404 na API, vamos salvar localmente para a demo funcionar
+
+      if (!res.ok) throw new Error()
+
+      toast.success(`Status atualizado para: ${newStatus}`)
+
+      // Update local state immediately for snappy UI
+      setBookings(prev => prev.map(b => b.id === bookingId ? { ...b, status: newStatus } : b))
     } catch (error) {
-      console.log('API offline, ignorando erro...')
+      toast.error('Erro ao atualizar status na API')
     }
-
-    // 2. Salva no localStorage para simular persistÃªncia e sincronia com cliente
-    localStorage.setItem(`order_status_${orderId}`, newStatus)
-
-    toast.success(`Status atualizado para: ${newStatus} (Simulado)`)
-
-    // 3. Atualiza a lista localmente imediatamente
-    setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus, estimatedTime: estimatedTime || o.estimatedTime } : o))
   }
 
-  // Abrir modal para confirmar pedido com tempo estimado
-  const openConfirmModal = (order: any) => {
-    setSelectedOrder(order)
-    setSelectedTime('30-45 min')
+  const openConfirmModal = (booking: any) => {
+    setSelectedBooking(booking)
     setShowConfirmModal(true)
   }
 
-  // Confirmar pedido com tempo estimado
-  const handleConfirmOrder = () => {
-    if (selectedOrder) {
-      updateOrderStatus(selectedOrder.id, 'Confirmado', selectedTime)
+  const handleConfirmBooking = () => {
+    if (selectedBooking) {
+      updateBookingStatus(selectedBooking.id, 'CONFIRMED')
       setShowConfirmModal(false)
-      setSelectedOrder(null)
+      setSelectedBooking(null)
     }
   }
 
-  // Função Wrapper Conforme Pedido
-  const handleUpdateStatus = async (orderId: string, newStatus: string) => {
-    await updateOrderStatus(orderId, newStatus)
-    toast.success('Agendamento confirmado com sucesso!')
+  const handleCompleteBooking = (bookingId: string) => {
+    if (confirm('Tem certeza que este agendamento foi concluído?')) {
+      updateBookingStatus(bookingId, 'COMPLETED')
+    }
   }
 
-  // Ações rÃ¡pidas por status
-  const getQuickActions = (order: any) => {
-    const actions = []
-
-    switch (order.status) {
-      case 'PENDING':
-        actions.push({
-          label: 'Confirmar Agendamento',
-          icon: CheckCircle,
-          color: 'bg-green-500 hover:bg-green-600',
-          onClick: () => handleUpdateStatus(order.id, 'CONFIRMED'),
-        })
-        break
-      default:
-        break
+  const handleCancelBooking = (bookingId: string) => {
+    if (confirm('Deseja realmente CANCELAR este agendamento?')) {
+      updateBookingStatus(bookingId, 'CANCELLED')
     }
-
-    return actions
   }
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'PENDING': return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
-      case 'CONFIRMED': return 'bg-green-500/20 text-green-400 border-green-500/30'
-      case 'Pendente': return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
-      case 'Confirmado': return 'bg-green-500/20 text-green-400 border-green-500/30'
+      case 'PENDING': return 'bg-yellow-500/20 text-yellow-500 border-yellow-500/30'
+      case 'CONFIRMED': return 'bg-blue-500/20 text-blue-400 border-blue-500/30'
+      case 'COMPLETED': return 'bg-green-500/20 text-green-400 border-green-500/30'
+      case 'CANCELLED': return 'bg-red-500/20 text-red-500 border-red-500/30'
       default: return 'bg-gray-500/20 text-gray-400 border-gray-500/30'
     }
   }
 
-  // Permitindo que o filtro mostre ambos padrões de base antiga e nova
-  const statuses = ['Todos', 'PENDING', 'CONFIRMED']
+  const statuses = ['Todos', 'PENDING', 'CONFIRMED', 'COMPLETED', 'CANCELLED']
 
-  const filteredOrders = filter === 'Todos'
-    ? orders
-    : orders.filter(o => o.status === filter || (filter === 'PENDING' && o.status === 'Pendente') || (filter === 'CONFIRMED' && o.status === 'Confirmado'))
+  const filteredBookings = filter === 'Todos'
+    ? bookings
+    : bookings.filter(b => b.status === filter)
 
   if (loading) {
-    return <div className="text-white text-center py-12">Carregando...</div>
+    return <div className="text-white text-center py-12">Carregando agendamentos...</div>
   }
 
   return (
@@ -163,8 +109,8 @@ export default function PedidosTab() {
       <div className="bg-gray-800 rounded-xl border border-primary/30 p-6">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
           <div className="flex items-center gap-2">
-            <ShoppingBag className="w-8 h-8 text-primary" />
-            <h2 className="text-3xl font-bold text-white">Gerenciar Agendamentos</h2>
+            <CalendarIcon className="w-8 h-8 text-primary" />
+            <h2 className="text-3xl font-bold text-white">Agendamentos</h2>
           </div>
 
           {/* View Mode Toggle */}
@@ -179,12 +125,11 @@ export default function PedidosTab() {
               onClick={() => setViewMode('calendar')}
               className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${viewMode === 'calendar' ? 'bg-primary text-black' : 'text-gray-400 hover:text-white'}`}
             >
-              Calendário
+              Calendário Diário
             </button>
           </div>
         </div>
 
-        {/* RENDERIZAÇÃO CONDICIONAL CENTRAL */}
         {viewMode === 'list' ? (
           <div className="flex flex-col">
             <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
@@ -197,10 +142,14 @@ export default function PedidosTab() {
                     : 'bg-gray-700 text-white hover:bg-gray-600'
                     }`}
                 >
-                  {status}
+                  {status === 'PENDING' ? 'Pendentes' :
+                    status === 'CONFIRMED' ? 'Confirmados' :
+                      status === 'COMPLETED' ? 'Concluídos' :
+                        status === 'CANCELLED' ? 'Cancelados' : 'Todos'}
+
                   {status !== 'Todos' && (
-                    <span className="ml-2 bg-gray-900/20 px-2 py-0.5 rounded-full text-xs">
-                      {orders.filter(o => o.status === status || (status === 'PENDING' && o.status === 'Pendente') || (status === 'CONFIRMED' && o.status === 'Confirmado')).length}
+                    <span className="ml-2 bg-gray-900/40 px-2 py-0.5 rounded-full text-xs">
+                      {bookings.filter(b => b.status === status).length}
                     </span>
                   )}
                 </button>
@@ -208,135 +157,108 @@ export default function PedidosTab() {
             </div>
 
             <div className="space-y-4">
-              {filteredOrders.length === 0 ? (
-                <p className="text-gray-500 text-center py-8">Nenhum pedido encontrado</p>
+              {filteredBookings.length === 0 ? (
+                <p className="text-gray-500 text-center py-8">Nenhum agendamento encontrado nesta categoria.</p>
               ) : (
-                filteredOrders.map((order) => {
-                  const quickActions = getQuickActions(order)
-
-                  return (
-                    <motion.div
-                      key={order.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="bg-gray-700 rounded-lg p-4"
-                    >
-                      <div className="flex justify-between items-start mb-4">
-                        <div>
-                          <h4 className="text-white font-bold text-lg">Agendamento #{order.id.slice(0, 8)}</h4>
-                          <p className="text-gray-400 text-sm">
-                            Cadastrado em: {new Date(order.createdAt).toLocaleString('pt-BR')}
-                          </p>
-                          {order.scheduledTime && (
-                            <div className="mt-2 bg-primary/10 border border-primary/20 rounded-lg p-2 flex items-center gap-2">
-                              <Clock className="w-5 h-5 text-primary" />
-                              <p className="text-primary font-bold">
-                                Horário Agendado: {new Date(order.scheduledTime).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}
-                              </p>
-                            </div>
-                          )}
-                        </div>
-                        <div className="text-right">
-                          <span className={`inline-block px-3 py-1 rounded-full text-sm font-semibold border ${getStatusColor(order.status)}`}>
-                            {order.status}
-                          </span>
-                          <p className="text-primary font-bold text-xl mt-2">
-                            R$ {order.total.toFixed(2)}
-                          </p>
+                filteredBookings.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()).map((booking) => (
+                  <motion.div
+                    key={booking.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-gray-700 rounded-lg p-4 border border-gray-600"
+                  >
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        <h4 className="text-white font-bold text-lg flex items-center gap-2">
+                          {booking.service}
+                        </h4>
+                        <p className="text-gray-400 text-sm mt-1">
+                          Solicitado em: {new Date(booking.createdAt).toLocaleString('pt-BR')}
+                        </p>
+                        <div className="mt-3 bg-primary/10 border border-primary/20 rounded-lg p-3 flex items-center gap-3 w-fit">
+                          <Clock className="w-5 h-5 text-primary" />
+                          <div>
+                            <p className="text-xs text-primary/70 font-bold uppercase tracking-wider mb-0.5">Data/Hora Agendada</p>
+                            <p className="text-primary font-bold text-lg leading-none">
+                              {new Date(booking.date).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}
+                            </p>
+                          </div>
                         </div>
                       </div>
-
-                      <div className="mb-4">
-                        <h5 className="text-gray-300 font-semibold mb-2">Serviços:</h5>
-                        <ul className="space-y-2">
-                          {order.items.map((item: any, idx: number) => (
-                            <li key={idx} className="bg-gray-800 border border-gray-600 rounded-lg p-2 text-gray-300 flex justify-between items-center">
-                              <span>
-                                {item.quantity}x <span className="text-primary font-semibold">{item.name}</span>
-                              </span>
-                              <span className="text-gray-400">R$ {item.price.toFixed(2)}</span>
-                            </li>
-                          ))}
-                        </ul>
+                      <div className="text-right flex flex-col items-end gap-2">
+                        <span className={`inline-block px-3 py-1 rounded-full text-sm font-semibold border ${getStatusColor(booking.status)}`}>
+                          {booking.status === 'PENDING' ? 'PENDENTE' : booking.status === 'CONFIRMED' ? 'CONFIRMADO' : booking.status === 'COMPLETED' ? 'CONCLUÍDO' : 'CANCELADO'}
+                        </span>
                       </div>
+                    </div>
 
-                      <div className="mb-4 border-t border-gray-600 pt-4">
-                        <h5 className="text-gray-300 font-semibold mb-1">Dados do Cliente:</h5>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 border-t border-gray-600 pt-4">
+                      <div>
+                        <h5 className="text-gray-300 font-semibold mb-2 text-sm uppercase tracking-wider">Cliente:</h5>
                         <div className="flex flex-col gap-1">
-                          {order.customerName ? (
+                          {booking.user ? (
                             <p className="text-white font-medium flex items-center gap-2">
                               <span className="w-2 h-2 rounded-full bg-primary"></span>
-                              {order.customerName}
+                              {booking.user.name || 'Sem Nome'}
                             </p>
                           ) : (
-                            <p className="text-gray-400 italic">Cliente não identificado</p>
+                            <p className="text-gray-400 italic">Usuário Deletado</p>
                           )}
                           <p className="text-gray-400 text-sm">
-                            Telefone: <span className="text-primary">{order.customerPhone}</span>
+                            Telefone: <span className="text-white bg-gray-800 px-2 py-0.5 rounded">{booking.user?.email.split('@')[0]}</span>
                           </p>
-                          {order.address?.rua && (
-                            <p className="text-gray-500 text-xs mt-2 italic">
-                              (Endereço legado detectado: {order.address.rua}, {order.address.numero})
-                            </p>
-                          )}
                         </div>
                       </div>
 
-                      {order.observations && (
-                        <div className="mb-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3">
-                          <h5 className="text-yellow-500 font-semibold mb-1 flex items-center gap-2">
-                            ⚠️ Observações:
+                      {booking.vehicle && (
+                        <div>
+                          <h5 className="text-gray-300 font-semibold mb-2 text-sm uppercase tracking-wider flex items-center gap-1">
+                            <Car className="w-4 h-4" /> Veículo Solicitado:
                           </h5>
-                          <p className="text-gray-300 text-sm italic">"{order.observations}"</p>
+                          <div className="bg-gray-800 p-3 rounded-lg border border-gray-600 h-full flex flex-col justify-center">
+                            <p className="text-white font-bold">{booking.vehicle.brand} {booking.vehicle.model}</p>
+                            <p className="text-primary text-sm font-bold">{booking.vehicle.year}</p>
+                          </div>
                         </div>
                       )}
+                    </div>
 
-                      <div className="mb-4">
-                        <h5 className="text-gray-300 font-semibold mb-1">Pagamento:</h5>
-                        <p className="text-gray-400 text-sm">{order.paymentMethod}</p>
+                    {booking.status === 'PENDING' && (
+                      <div className="mt-4 pt-4 border-t border-gray-700 grid grid-cols-2 gap-3">
+                        <Button
+                          onClick={() => handleCancelBooking(booking.id)}
+                          className="w-full bg-transparent border-2 border-gray-500 hover:bg-red-500/20 hover:text-red-400 hover:border-red-500 text-gray-400 font-bold py-6 rounded-lg transition"
+                        >
+                          <X className="w-5 h-5 mr-2" /> REJEITAR
+                        </Button>
+                        <Button
+                          onClick={() => updateBookingStatus(booking.id, 'CONFIRMED')}
+                          className="w-full bg-[#D4AF37] hover:bg-[#B8962E] text-black font-black py-6 rounded-lg transition"
+                        >
+                          <CheckCircle2 className="w-5 h-5 mr-2 text-black" /> CONFIRMAR
+                        </Button>
                       </div>
+                    )}
 
-                      {(order.status === 'PENDING' || order.status === 'Pendente') && (
-                        <div className="mt-6 pt-4 border-t border-gray-700">
-                          <Button
-                            onClick={() => handleUpdateStatus(order.id, 'CONFIRMED')}
-                            className="w-full bg-[#D4AF37] hover:bg-[#B8962E] text-white font-bold py-6 rounded-lg flex items-center justify-center gap-2"
-                          >
-                            <CheckCircle2 className="w-5 h-5" />
-                            CONFIRMAR AGENDAMENTO
-                          </Button>
-                        </div>
-                      )}
-
-                      {quickActions.length > 0 && (
-                        <div className="flex flex-wrap gap-2 pt-4 border-t border-gray-600">
-                          {quickActions.map((action, idx) => {
-                            const Icon = action.icon
-                            return (
-                              <button
-                                key={idx}
-                                onClick={action.onClick}
-                                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-white transition-all ${action.color}`}
-                              >
-                                <Icon className="w-5 h-5" />
-                                {action.label}
-                              </button>
-                            )
-                          })}
-                        </div>
-                      )}
-
-                      {order.status === 'Entregue' && (
-                        <div className="pt-4 border-t border-gray-600">
-                          <p className="text-green-400 font-semibold flex items-center gap-2">
-                            <Package className="w-5 h-5" />
-                            Pedido entregue com sucesso!
-                          </p>
-                        </div>
-                      )}
-                    </motion.div>
-                  )
-                })
+                    {booking.status === 'CONFIRMED' && (
+                      <div className="mt-4 pt-4 border-t border-gray-700 grid grid-cols-2 gap-3">
+                        <Button
+                          onClick={() => handleCancelBooking(booking.id)}
+                          className="w-full bg-transparent border border-gray-600 hover:bg-gray-600 text-gray-300 font-bold py-4 rounded-lg transition"
+                        >
+                          Cancelar
+                        </Button>
+                        <Button
+                          onClick={() => handleCompleteBooking(booking.id)}
+                          className="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-4 rounded-lg transition shadow-[0_0_15px_rgba(22,163,74,0.3)]"
+                        >
+                          Finalizar Atendimento
+                        </Button>
+                      </div>
+                    )}
+                  </motion.div>
+                )
+                )
               )}
             </div>
           </div>
@@ -370,9 +292,9 @@ export default function PedidosTab() {
 
             <div className="bg-gray-900 rounded-xl overflow-hidden border border-gray-700">
               {Array.from({ length: 11 }, (_, i) => i + 8).map(hour => {
-                const hourOrders = orders.filter(o => {
-                  if (!o.scheduledTime) return false
-                  const date = new Date(o.scheduledTime)
+                const hourBookings = bookings.filter(b => {
+                  if (!b.date) return false
+                  const date = new Date(b.date)
                   return date.getDate() === selectedDate.getDate() &&
                     date.getMonth() === selectedDate.getMonth() &&
                     date.getFullYear() === selectedDate.getFullYear() &&
@@ -385,37 +307,34 @@ export default function PedidosTab() {
                       {hour.toString().padStart(2, '0')}:00
                     </div>
                     <div className="flex-1 p-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-                      {hourOrders.length === 0 ? (
+                      {hourBookings.length === 0 ? (
                         <div className="text-gray-600 text-sm italic flex items-center p-2 opacity-50">Livre</div>
                       ) : (
-                        hourOrders.map(order => (
+                        hourBookings.map(b => (
                           <div
-                            key={order.id}
-                            onClick={() => {
-                              if (confirm(`Deseja confirmar ou gerenciar a Cita de ${order.customerName || 'Cliente'} às ${new Date(order.scheduledTime).toLocaleTimeString('pt-BR')}?`)) {
-                                if (order.status === 'PENDING' || order.status === 'Pendente') {
-                                  openConfirmModal(order)
-                                } else {
-                                  alert(`Agendamento de ${order.customerName} já está ${order.status}.`)
-                                }
-                              }
-                            }}
-                            className={`p-3 rounded-lg border cursor-pointer hover:opacity-90 transition-opacity ${order.status === 'CONFIRMED' || order.status === 'Confirmado'
-                              ? 'bg-green-500/10 border-green-500/30'
-                              : 'bg-primary/10 border-primary/30'
+                            key={b.id}
+                            className={`p-3 rounded-lg border flex flex-col gap-1 ${b.status === 'CONFIRMED'
+                              ? 'bg-blue-500/10 border-blue-500/30'
+                              : b.status === 'COMPLETED' ? 'bg-green-500/10 border-green-500/30'
+                                : b.status === 'CANCELLED' ? 'bg-red-500/10 border-red-500/30'
+                                  : 'bg-primary/10 border-primary/30'
                               }`}
                           >
-                            <p className="font-bold text-white text-sm truncate flex items-center gap-2">
-                              {order.status === 'CONFIRMED' || order.status === 'Confirmado' ? <CheckCircle2 className="w-4 h-4 text-green-500" /> : null}
-                              {order.customerName || 'Cliente Anônimo'}
+                            <p className="font-bold text-white text-sm truncate flex items-center justify-between gap-2">
+                              <span>{b.user?.name || 'Visitante'}</span>
+                              {b.status === 'CONFIRMED' && <CheckCircle2 className="w-4 h-4 text-blue-400" />}
+                              {b.status === 'COMPLETED' && <CheckCheck className="w-4 h-4 text-green-400" />}
                             </p>
-                            <p className="text-gray-400 text-xs mt-1 truncate">
-                              {order.items.map((i: any) => i.name).join(', ')}
+                            <p className="text-gray-300 text-xs font-semibold">{b.service}</p>
+                            <p className="text-gray-500 text-[10px] truncate">
+                              {b.vehicle ? `${b.vehicle.brand} ${b.vehicle.model}` : 'Sem Veículo Específico'}
                             </p>
-                            <div className="flex justify-between items-center mt-2">
-                              <span className="text-primary font-semibold text-xs text-right">R$ {order.total.toFixed(2)}</span>
-                              <span className={`text-[10px] px-2 py-0.5 rounded-full ${getStatusColor(order.status)}`}>{order.status}</span>
-                            </div>
+
+                            {b.status === 'PENDING' && (
+                              <button onClick={() => updateBookingStatus(b.id, 'CONFIRMED')} className="mt-2 w-full text-[10px] uppercase font-bold bg-primary text-black py-1 rounded hover:bg-primary-dark">
+                                Confirmar
+                              </button>
+                            )}
                           </div>
                         ))
                       )}
@@ -426,64 +345,7 @@ export default function PedidosTab() {
             </div>
           </div>
         )}
-
-        {/* Modal de ConfirmaÃ§Ã£o com Tempo Estimado */}
-        <AnimatePresence>
-          {showConfirmModal && selectedOrder && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-gray-900/80 z-50 flex items-center justify-center p-4"
-              onClick={() => setShowConfirmModal(false)}
-            >
-              <motion.div
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.9, opacity: 0 }}
-                onClick={(e) => e.stopPropagation()}
-                className="bg-gray-800 rounded-2xl max-w-md w-full p-6 border border-primary/50"
-              >
-                <div className="flex justify-between items-center mb-6">
-                  <h3 className="text-2xl font-bold text-white">Confirmar Pedido</h3>
-                  <button
-                    onClick={() => setShowConfirmModal(false)}
-                    className="text-gray-400 hover:text-white"
-                  >
-                    <X className="w-6 h-6" />
-                  </button>
-                </div>
-
-                <div className="mb-6">
-                  <p className="text-gray-300 mb-2">
-                    Agendamento <span className="text-primary font-bold">#{selectedOrder.id.slice(0, 8)}</span>
-                  </p>
-                  <p className="text-gray-400 text-sm">
-                    Total: <span className="text-white font-semibold">R$ {selectedOrder.total.toFixed(2)}</span>
-                  </p>
-                </div>
-
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => setShowConfirmModal(false)}
-                    className="flex-1 bg-gray-700 text-white py-3 rounded-lg font-semibold hover:bg-gray-600 transition-colors"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    onClick={handleConfirmOrder}
-                    className="flex-1 bg-green-500 text-white py-3 rounded-lg font-semibold hover:bg-green-600 transition-colors flex items-center justify-center gap-2"
-                  >
-                    <CheckCircle className="w-5 h-5" />
-                    Confirmar
-                  </button>
-                </div>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </div>
     </>
   )
 }
-

@@ -140,7 +140,7 @@ export default async function VehicleDetailsPage({ params }: { params: { id: str
                         </a>
 
                         <Link
-                            href="/agendamento"
+                            href={`/agendamento?vehicleId=${vehicle.id}`}
                             className="flex-1 flex items-center justify-center rounded-2xl bg-primary hover:bg-primary-dark transition active:scale-[0.98] shadow-[0_0_20px_rgba(245,159,10,0.3)] group"
                         >
                             <span className="text-background-dark font-black text-lg uppercase tracking-tight group-hover:scale-105 transition-transform">

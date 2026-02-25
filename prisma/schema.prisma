@@ -18,6 +18,7 @@ model User {
   role          String    @default("user")
   accounts      Account[]
   sessions      Session[]
+  bookings      Booking[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 }
@@ -156,20 +157,18 @@ model Customer {
   updatedAt  DateTime @updatedAt
 }
 
-// Agendamentos de Serviços
-model Appointment {
-  id             String   @id @default(cuid())
-  items          Json     // Array de serviços agendados
-  customerName   String?
-  customerPhone  String
-  paymentMethod  String   // PIX ou LOCAL
-  status         String   @default("PENDING") // PENDING, CONFIRMED, COMPLETED, CANCELED
-  observations   String?  // Observações adicionais
-  total          Float
-  scheduledTime  DateTime // Horário agendado do serviço
-  confirmedAt    DateTime? // Data/hora da confirmação do agendamento
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+// Agendamentos de Test Drive, Revisão, Avaliação
+model Booking {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  service   String   // "Test Drive", "Revisão", "Avaliação de Usado"
+  vehicleId String?  // Opcional: Se for um test drive, qual o carro?
+  vehicle   Vehicle? @relation(fields: [vehicleId], references: [id])
+  date      DateTime // Data e Hora do agendamento
+  status    String   @default("PENDING") // PENDING, CONFIRMED, CANCELLED, COMPLETED
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 // Configurações globais
@@ -196,6 +195,7 @@ model Vehicle {
   images          String[] // Array com até 10 URLs de imagens
   category        String   // Sedan, SUV, Hatch, etc
   status          String   @default("AVAILABLE") // AVAILABLE, RESERVED, SOLD
+  bookings        Booking[]
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 }
