@@ -19,7 +19,13 @@ export default function VeiculosTab() {
         category: 'Sedan',
         description: '',
         hasAuction: false,
-        status: 'AVAILABLE'
+        status: 'AVAILABLE',
+        technicalSheet: {
+            transmission: '',
+            fuel: '',
+            mileage: '',
+            engine: ''
+        }
     })
     const [existingImages, setExistingImages] = useState<string[]>([])
     const [isSaving, setIsSaving] = useState(false)
@@ -99,7 +105,10 @@ export default function VeiculosTab() {
             category: vehicle.category,
             description: vehicle.description,
             hasAuction: vehicle.hasAuction,
-            status: vehicle.status
+            status: vehicle.status,
+            technicalSheet: typeof vehicle.technicalSheet === 'string'
+                ? JSON.parse(vehicle.technicalSheet)
+                : (vehicle.technicalSheet || { transmission: '', fuel: '', mileage: '', engine: '' })
         })
         setIsModalOpen(true)
     }
@@ -115,7 +124,13 @@ export default function VeiculosTab() {
             category: 'Sedan',
             description: '',
             hasAuction: false,
-            status: 'AVAILABLE'
+            status: 'AVAILABLE',
+            technicalSheet: {
+                transmission: '',
+                fuel: '',
+                mileage: '',
+                engine: ''
+            }
         })
     }
 
@@ -228,6 +243,38 @@ export default function VeiculosTab() {
                                         <option value="RESERVED">Reservado</option>
                                         <option value="SOLD">Vendido</option>
                                     </select>
+                                </div>
+                                <div className="col-span-2 grid grid-cols-2 gap-4 border-t border-gray-100 pt-4 mt-2">
+                                    <h4 className="col-span-2 text-sm font-bold text-gray-900">Ficha Técnica</h4>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Câmbio</label>
+                                        <select value={formData.technicalSheet.transmission} onChange={e => setFormData({ ...formData, technicalSheet: { ...formData.technicalSheet, transmission: e.target.value } })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-black bg-white">
+                                            <option value="">Selecione...</option>
+                                            <option value="Automático">Automático</option>
+                                            <option value="Manual">Manual</option>
+                                            <option value="CVT">CVT</option>
+                                            <option value="Dupla Embreagem">Dupla Embreagem</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Combustível</label>
+                                        <select value={formData.technicalSheet.fuel} onChange={e => setFormData({ ...formData, technicalSheet: { ...formData.technicalSheet, fuel: e.target.value } })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-black bg-white">
+                                            <option value="">Selecione...</option>
+                                            <option value="Flex">Flex</option>
+                                            <option value="Gasolina">Gasolina</option>
+                                            <option value="Híbrido">Híbrido</option>
+                                            <option value="Elétrico">Elétrico</option>
+                                            <option value="Diesel">Diesel</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Quilometragem</label>
+                                        <input required type="text" value={formData.technicalSheet.mileage} onChange={e => setFormData({ ...formData, technicalSheet: { ...formData.technicalSheet, mileage: e.target.value } })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-black" placeholder="Ex: 15.000 km" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Motor</label>
+                                        <input required type="text" value={formData.technicalSheet.engine} onChange={e => setFormData({ ...formData, technicalSheet: { ...formData.technicalSheet, engine: e.target.value } })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-black" placeholder="Ex: 2.0 Turbo" />
+                                    </div>
                                 </div>
                             </div>
 

@@ -35,6 +35,7 @@ export async function POST(request: Request) {
                 hasAuction: Boolean(data.hasAuction),
                 images: images || [],
                 status: data.status || 'AVAILABLE',
+                technicalSheet: data.technicalSheet || { transmission: '', fuel: '', mileage: '', engine: '' },
             }
         })
 

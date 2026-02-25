@@ -28,6 +28,7 @@ export async function PUT(
                 hasAuction: Boolean(data.hasAuction),
                 images: images || [],
                 status: data.status,
+                technicalSheet: data.technicalSheet || { transmission: '', fuel: '', mileage: '', engine: '' },
             }
         })
 
