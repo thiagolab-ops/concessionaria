@@ -9,36 +9,46 @@ interface VehicleGalleryProps {
 }
 
 export function VehicleGallery({ images, brand, model }: VehicleGalleryProps) {
-    const [activeImage, setActiveImage] = useState(0)
+    const [activeIndex, setActiveIndex] = useState(0)
 
     const displayImages = images.length > 0 ? images : ['https://via.placeholder.com/800x600?text=Sem+Foto']
 
     return (
-        <section className="relative w-full pt-20">
-            {/* Main Image */}
-            <div className="relative aspect-[4/3] w-full overflow-hidden bg-surface-dark">
+        <div className="w-full flex flex-col gap-4">
+            {/* Imagem Principal em Destaque */}
+            <div className="relative w-full aspect-[4/3] md:aspect-video rounded-2xl overflow-hidden border border-surface-border shadow-lg group">
                 <img
-                    src={displayImages[activeImage]}
-                    alt={`${brand} ${model}`}
-                    className="absolute inset-0 h-full w-full object-cover transition-opacity duration-300"
+                    src={displayImages[activeIndex]}
+                    alt={`Visão principal do veículo ${brand} ${model}`}
+                    className="absolute inset-0 w-full h-full object-cover transition-all duration-500 ease-in-out"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-background-dark via-transparent to-black/20" />
             </div>
 
-            {/* Thumbnails */}
+            {/* Carrossel de Miniaturas */}
             {displayImages.length > 1 && (
-                <div className="relative -mt-10 mb-6 flex gap-3 overflow-x-auto hide-scrollbar px-4 pb-2 z-10 w-full scroll-smooth">
+                <div className="flex gap-3 overflow-x-auto pb-4 scrollbar-hide scroll-smooth snap-x px-1 -mx-1">
                     {displayImages.map((img, idx) => (
                         <button
                             key={idx}
-                            onClick={() => setActiveImage(idx)}
-                            className={`relative size-20 shrink-0 overflow-hidden rounded-xl border-2 transition-all ${activeImage === idx ? 'border-primary shadow-[0_0_15px_rgba(245,159,10,0.4)] scale-105' : 'border-surface-border opacity-60 hover:opacity-100'}`}
+                            onClick={() => setActiveIndex(idx)}
+                            className={`relative shrink-0 w-24 h-16 md:w-32 md:h-20 rounded-xl overflow-hidden snap-center transition-all duration-300 group ${activeIndex === idx
+                                    ? "ring-2 ring-primary scale-105 opacity-100 z-10 shadow-[0_0_15px_rgba(245,159,10,0.4)]"
+                                    : "border border-surface-border opacity-60 hover:opacity-100 hover:scale-105"
+                                }`}
                         >
-                            <img src={img} className="h-full w-full object-cover" alt={`Thumb ${idx + 1}`} />
+                            <img
+                                src={img}
+                                alt={`Miniatura ${idx + 1}`}
+                                className="w-full h-full object-cover"
+                            />
+                            {/* Overlay escuro para as inativas */}
+                            {activeIndex !== idx && (
+                                <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors"></div>
+                            )}
                         </button>
                     ))}
                 </div>
             )}
-        </section>
+        </div>
     )
 }

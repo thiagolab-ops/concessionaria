@@ -39,7 +39,9 @@ export default async function VehicleDetailsPage({ params }: { params: { id: str
                 </button>
             </header>
 
-            <VehicleGallery images={vehicle.images} brand={vehicle.brand} model={vehicle.model} />
+            <div className="pt-24 px-4 mb-8">
+                <VehicleGallery images={vehicle.images} brand={vehicle.brand} model={vehicle.model} />
+            </div>
 
             {/* Content Area */}
             <main className="flex-1 px-5 pb-32">
