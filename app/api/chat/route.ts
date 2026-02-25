@@ -1,104 +1,49 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/db'
+import Groq from "groq-sdk";
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/db";
 
-export const dynamic = 'force-dynamic'
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
-async function askGroq(messages: { role: "system" | "user" | "assistant"; content: string }[]) {
-  const apiKey = process.env.GROQ_API_KEY
-  console.error("=== DEBUG GROQ ===")
-  console.error("GROQ_API_KEY set?", !!apiKey)
-  console.error("GROQ_MODEL:", process.env.GROQ_MODEL)
-
-  if (!apiKey || apiKey === 'dummy_key_for_build') {
-    console.error("Erro: GROQ_API_KEY não está definida no ambiente de produção.")
-    throw new Error("GROQ_API_KEY not set")
-  }
-
-  const model = process.env.GROQ_MODEL || "llama-3.1-8b-instant"
-
-  console.log("-> Chamando Groq API com modelo:", model)
-  console.error("Groq model em uso:", model)
-
-  const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: model,
-      messages: messages,
-      temperature: 0.5,
-    }),
-  })
-
-  if (!res.ok) {
-    const errorBody = await res.text()
-    console.error("Groq status:", res.status)
-    console.error("Groq body:", errorBody)
-    throw new Error(`Groq error ${res.status}: ${errorBody}`)
-  }
-
-  const data = await res.json()
-  const text = data.choices?.[0]?.message?.content ?? ""
-  return text
-}
-
-export async function POST(request: NextRequest) {
+export async function POST(req: Request) {
   try {
-    const body = await request.json()
-    // Aceita tanto { message: "texto" } quanto { messages: [...] } dependendo do frontend
-    let userMessage = body.message
-    let frontendMessages = body.messages
+    const { messages } = await req.json();
 
-    if (!userMessage && frontendMessages && frontendMessages.length > 0) {
-      // Se mandar array, pegamos o último user message
-      userMessage = frontendMessages[frontendMessages.length - 1].content
+    if (!messages || !Array.isArray(messages)) {
+      return NextResponse.json({ error: "Formato de mensagens inválido" }, { status: 400 });
     }
 
-    if (!userMessage) {
-      return NextResponse.json({ error: 'Mensagem não fornecida' }, { status: 400 })
-    }
+    // Buscar carros disponíveis para o bot ter contexto do estoque real
+    const vehicles = await prisma.vehicle.findMany({
+      where: { status: "AVAILABLE" },
+      select: { brand: true, model: true, year: true, price: true }
+    });
 
-    const services = await prisma.service.findMany({
-      where: { isAvailable: true }
-    })
+    const stockInfo = vehicles.map(v => `${v.brand} ${v.model} (${v.year}) - R$ ${v.price.toLocaleString('pt-BR')}`).join(", ");
 
-    const menuInfo = services.map((p: any) => `${p.name} - R$ ${p.price.toFixed(2)}: ${p.description}`).join('\n')
+    const systemPrompt = {
+      role: "system",
+      content: `Você é um Consultor de Vendas Premium da concessionária Luxe Motors. 
+      Seja extremamente educado, sofisticado, persuasivo e conciso nas suas respostas (1 a 3 parágrafos curtos no máximo). 
+      Seu objetivo principal é transparecer autoridade no mercado de luxo e tentar sutilmente convencer o cliente a agendar um Test Drive ou uma Visita à loja.
+      Nunca invente carros que não estão no estoque de jeito nenhum.
+      Estoque atual disponível na loja agora: ${stockInfo || "Nenhum carro cadastrado no momento"}.
+      Se o cliente perguntar se tem um carro X, e não estiver na lista de estoque, diga educadamente que no momento não temos aquela unidade, mas sugira um similar da lista de estoque.
+      Se o cliente perguntar sobre financiamento, taxas, ou entrada, diga que temos "condições exclusivas e taxas especiais de financiamento premium" e peça para ele "agendar uma visita presencial para uma simulação personalizada".
+      Fale sempre em Português do Brasil de forma muito natural. Não use formatações markdown exageradas (apenas bold para nomes de carros ou preços se necessário).`
+    };
 
-    const systemPrompt = `Você é um atendente inteligente da barbearia Máfia BR.
-Você deve responder em português do Brasil, com um tom amigável, masculino, tradicional e profissional, focado no universo de barbearias clássicas.
-Você ajuda os clientes a tirar dúvidas sobre cortes (fade, degradê, social, militar), barboterapia, horários e preços.
-Responda de forma concisa e direta. Nunca invente preços que não estão na tabela.
-No seu vocabulário, seja cortês e direto.
+    const response = await groq.chat.completions.create({
+      model: process.env.GROQ_MODEL || "llama-3.1-8b-instant",
+      messages: [systemPrompt, ...messages],
+      temperature: 0.6,
+      max_tokens: 500,
+    });
 
-Serviços oferecidos na barbearia:
-${menuInfo}
-
-Seja educado e convide o cliente a clicar na tela de serviços para reservar.`
-
-    const messagesToSend: any[] = [
-      { role: 'system', content: systemPrompt },
-    ]
-
-    // Adiciona as mensagens anteriores se fornecidas, caso contrário, só a userMessage
-    if (frontendMessages && Array.isArray(frontendMessages)) {
-      // ignora messages de role 'system' enviadas do front e adiciona as outras
-      frontendMessages.filter(m => m.role !== 'system').forEach(m => {
-        messagesToSend.push({ role: m.role, content: m.content })
-      })
-    } else {
-      messagesToSend.push({ role: 'user', content: userMessage })
-    }
-
-    const reply = await askGroq(messagesToSend)
-
-    return NextResponse.json({ reply })
+    return NextResponse.json({
+      message: response.choices?.[0]?.message?.content || "Desculpe, ocorreu um erro de comunicação com nossos servidores de IA."
+    });
   } catch (error) {
-    console.error('Erro geral na rota de chat:', error)
-    return NextResponse.json(
-      { error: 'Erro ao processar mensagem. Verifique logs do servidor.' },
-      { status: 500 }
-    )
+    console.error("Erro no Chatbot Groq:", error);
+    return NextResponse.json({ error: "Erro interno no servidor ao processar o chat" }, { status: 500 });
   }
 }
