@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { signOut } from 'next-auth/react'
 import { motion } from 'framer-motion'
-import { Sparkles, Package, Percent, Megaphone, Bell, ShoppingBag, LogOut, Settings, Folder, BarChart3, Car } from 'lucide-react'
+import { Sparkles, Bell, ShoppingBag, LogOut, Settings, Folder, Car } from 'lucide-react'
 import VeiculosTab from './veiculos-tab'
 import CombosTab from './combos-tab'
 import DescontosTab from './descontos-tab'
@@ -21,11 +21,7 @@ export default function AdminDashboard() {
   const tabs = [
     { id: 'veiculos', label: 'Veículos', icon: Car },
     { id: 'categorias', label: 'Categorias', icon: Folder },
-    { id: 'combos', label: 'Combos', icon: Package },
-    { id: 'descontos', label: 'Descontos', icon: Percent },
-    { id: 'marketing', label: 'Marketing', icon: Megaphone },
     { id: 'pedidos', label: 'Agendamentos', icon: ShoppingBag },
-    { id: 'financeiro', label: 'Financeiro', icon: BarChart3 },
     { id: 'configuracoes', label: 'Configurações', icon: Settings },
   ]
 
